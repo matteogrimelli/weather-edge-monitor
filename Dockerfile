@@ -29,4 +29,6 @@ EXPOSE 5000
 
 # Comando eseguito all'avvio del container.
 # Avvia l'applicazione Flask.
-CMD ["python", "app.py"]
+# CMD ["python", "app.py"]
+# Usa Gunicorn come server WSGI per eseguire l'app Flask.
+CMD ["gunicorn", "--bind", "0.0.0.0:5000", "app:app"]

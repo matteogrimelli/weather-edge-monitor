@@ -1,0 +1,55 @@
+# Versione della sintassi del file buildspec usata da AWS CodeBuild.
+version: 0.2
+
+# Definisce le fasi che CodeBuild deve eseguire.
+phases:
+
+  # Fase di installazione.
+  # Qui vengono preparati ambiente e dipendenze.
+  install:
+
+    # Specifica la versione del runtime Python da usare durante la build.
+    runtime-versions:
+      python: 3.12
+
+    # Comandi eseguiti nella fase di installazione.
+    commands:
+      # Messaggio informativo nei log di CodeBuild.
+      - echo Installing dependencies...
+
+      # Aggiorna pip all'ultima versione disponibile.
+      - pip install --upgrade pip
+
+      # Installa le dipendenze Python del progetto.
+      - pip install -r requirements.txt
+
+
+  # Fase di build.
+  # Qui eseguiamo i controlli principali prima del deploy.
+  build:
+
+    # Comandi eseguiti nella fase di build.
+    commands:
+      # Messaggio informativo nei log.
+      - echo Running tests...
+
+      # Esegue i test automatici con pytest.
+      # Se i test falliscono, la pipeline si interrompe.
+      - pytest
+
+      # Messaggio finale se la build è completata correttamente.
+      - echo Build completed.
+
+
+# Definisce quali file CodeBuild deve passare allo step successivo della pipeline.
+# In questo caso, questi file saranno usati da Elastic Beanstalk per il deploy Docker.
+artifacts:
+  files:
+    # File principale dell'app Flask.
+    - app.py
+
+    # File con le dipendenze Python.
+    - requirements.txt
+
+    # File usato da Elastic Beanstalk/Docker per costruire il container.
+    - Dockerfile

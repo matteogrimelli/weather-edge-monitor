@@ -1,0 +1,20 @@
+# Definisce i servizi/container che Docker Compose deve gestire.
+services:
+
+  # Nome logico del servizio.
+  # Rappresenta la web app Weather Edge Monitor.
+  weather-edge-monitor:
+
+    # Indica a Docker Compose di costruire l'immagine usando il Dockerfile
+    # presente nella cartella corrente.
+    build: .
+
+    # Nome esplicito assegnato al container.
+    # Utile per riconoscerlo facilmente con comandi come "docker ps".
+    container_name: weather-edge-monitor
+
+    # Mappa le porte tra macchina locale e container.
+    # Formato: "porta_locale:porta_container"
+    # Quindi http://localhost:5000 sul PC viene inoltrato alla porta 5000 del container.
+    ports:
+      - "5000:5000"

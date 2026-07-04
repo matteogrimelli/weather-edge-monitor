@@ -1,6 +1,12 @@
-# Importa l'istanza Flask definita in app.py.
-# Il blocco if __name__ == "__main__" non viene eseguito durante l'import,
-# quindi il server non parte automaticamente durante i test.
+from pathlib import Path
+import sys
+
+# Aggiunge la root del progetto al path di Python.
+# Serve per permettere a pytest, anche su AWS CodeBuild,
+# di importare correttamente app.py dalla cartella principale.
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(PROJECT_ROOT))
+
 from app import app
 
 

@@ -45,11 +45,5 @@ phases:
 # In questo caso, questi file saranno usati da Elastic Beanstalk per il deploy Docker.
 artifacts:
   files:
-    # File principale dell'app Flask.
-    - app.py
-
-    # File con le dipendenze Python.
-    - requirements.txt
-
-    # File usato da Elastic Beanstalk/Docker per costruire il container.
-    - Dockerfile
+    # Per semplificare, includiamo tutti i file del progetto.
+    - '**/*'

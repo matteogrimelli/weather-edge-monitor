@@ -47,5 +47,7 @@ phases:
 # In questo caso, questi file saranno usati da Elastic Beanstalk per il deploy Docker.
 artifacts:
   files:
-    # Per semplificare, includiamo tutti i file del progetto.
-    - '**/*'
+    - app.py
+    - requirements.txt
+    - Dockerfile
+    - templates/**/*

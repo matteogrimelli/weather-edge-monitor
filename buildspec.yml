@@ -35,7 +35,9 @@ phases:
 
       # Esegue i test automatici con pytest.
       # Se i test falliscono, la pipeline si interrompe.
-      - pytest
+      # - pytest
+      # Esegui i test con pytest e mostra i dettagli dei test falliti.
+      - python -m pytest
 
       # Messaggio finale se la build è completata correttamente.
       - echo Build completed.

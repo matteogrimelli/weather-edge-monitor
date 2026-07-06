@@ -1,24 +1,17 @@
-# Importa Flask, il framework web usato per creare l'applicazione.
-# jsonify serve per restituire risposte in formato JSON.
-from flask import Flask, jsonify
+from flask import Flask, jsonify, request
+import requests
 
 
-# Crea l'istanza principale dell'applicazione Flask.
-# __name__ indica a Flask il modulo corrente, utile per configurare percorsi e risorse.
 app = Flask(__name__)
 
+APP_VERSION = "1.1.0"
 
-# Versione corrente dell'applicazione.
-# Verrà mostrata sia nella homepage sia nell'endpoint /health.
-APP_VERSION = "1.0.0"
+GEOCODING_URL = "https://geocoding-api.open-meteo.com/v1/search"
+FORECAST_URL = "https://api.open-meteo.com/v1/forecast"
 
 
-# Definisce la route principale dell'applicazione.
-# Quando l'utente apre http://localhost:5000/, viene eseguita questa funzione.
 @app.route("/")
 def home():
-    # Restituisce una semplice pagina HTML.
-    # Questa è la prima versione minimale della dashboard.
     return """
     <html>
         <head>
@@ -27,28 +20,117 @@ def home():
         <body>
             <h1>Weather Edge Monitor</h1>
             <p>Base application running successfully.</p>
-            <p>Version: 1.0.0</p>
+            <p>Weather API available at: /api/weather?city=Modena</p>
+            <p>Version: 1.1.0</p>
         </body>
     </html>
     """
 
 
-# Definisce l'endpoint /health.
-# Serve per verificare che l'applicazione sia attiva e risponda correttamente.
-# Sarà utile anche per Docker, pipeline locale e pipeline AWS.
 @app.route("/health")
 def health():
-    # Restituisce una risposta JSON con stato e versione dell'app.
     return jsonify({
         "status": "ok",
         "version": APP_VERSION
     })
 
 
-# Questo blocco viene eseguito solo quando il file app.py viene lanciato direttamente.
-# Non viene eseguito se l'app viene importata da un altro modulo.
+def get_coordinates(city_name):
+    """
+    Converts a city name into geographic coordinates using Open-Meteo Geocoding API.
+    """
+    params = {
+        "name": city_name,
+        "count": 1,
+        "language": "it",
+        "format": "json"
+    }
+
+    response = requests.get(GEOCODING_URL, params=params, timeout=10)
+    response.raise_for_status()
+
+    data = response.json()
+    results = data.get("results", [])
+
+    if not results:
+        return None
+
+    location = results[0]
+
+    return {
+        "name": location.get("name"),
+        "country": location.get("country"),
+        "admin1": location.get("admin1"),
+        "latitude": location.get("latitude"),
+        "longitude": location.get("longitude"),
+        "timezone": location.get("timezone")
+    }
+
+
+def get_current_weather(latitude, longitude):
+    """
+    Retrieves current weather data for the given coordinates using Open-Meteo Forecast API.
+    """
+    params = {
+        "latitude": latitude,
+        "longitude": longitude,
+        "current": "temperature_2m,relative_humidity_2m,wind_speed_10m",
+        "timezone": "auto"
+    }
+
+    response = requests.get(FORECAST_URL, params=params, timeout=10)
+    response.raise_for_status()
+
+    return response.json()
+
+
+@app.route("/api/weather")
+def api_weather():
+    """
+    REST endpoint that returns current weather data for a city.
+
+    Example:
+    /api/weather?city=Modena
+    """
+    city = request.args.get("city")
+
+    if not city:
+        return jsonify({
+            "error": "Missing city parameter. Example: /api/weather?city=Modena"
+        }), 400
+
+    try:
+        location = get_coordinates(city)
+
+        if location is None:
+            return jsonify({
+                "error": f"City not found: {city}"
+            }), 404
+
+        weather = get_current_weather(
+            location["latitude"],
+            location["longitude"]
+        )
+
+        current = weather.get("current", {})
+
+        return jsonify({
+            "city": location["name"],
+            "region": location["admin1"],
+            "country": location["country"],
+            "latitude": location["latitude"],
+            "longitude": location["longitude"],
+            "temperature": current.get("temperature_2m"),
+            "humidity": current.get("relative_humidity_2m"),
+            "wind_speed": current.get("wind_speed_10m"),
+            "time": current.get("time")
+        })
+
+    except requests.RequestException:
+        return jsonify({
+            "error": "Unable to retrieve weather data"
+        }), 500
+
+
 if __name__ == "__main__":
-    # Avvia il server Flask.
-    # host="0.0.0.0" permette all'app di essere raggiungibile anche dentro Docker.
-    # port=5000 indica che l'app sarà disponibile sulla porta 5000.
     app.run(host="0.0.0.0", port=5000)

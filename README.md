@@ -4,6 +4,11 @@ Weather Edge Monitor è una semplice applicazione web sviluppata con Flask, Dock
 
 L'applicazione permette di cercare una città e visualizzare i dati meteo correnti tramite le API pubbliche di Open-Meteo. Il progetto include una dashboard HTML, un endpoint REST, test automatici, containerizzazione Docker e una pipeline CI/CD su AWS.
 
+## Documentazione
+
+- [Testing](docs/TESTING.md)
+- [Changelog](docs/CHANGELOG.md)
+
 ## Obiettivo
 
 L'obiettivo del progetto è realizzare una piccola applicazione cloud-native con:
@@ -119,9 +124,9 @@ L'applicazione usa due chiamate esterne:
     ├── buildspec.yml
     ├── local-pipeline.ps1
     ├── local-deploy.ps1
-    ├── README.md
-    ├── CHANGELOG.md
-    ├── TESTING.md
+    ├── docs/
+    │   └── CHANGELOG.md
+    │   └── TESTING.md
     ├── templates/
     │   └── index.html
     └── tests/
@@ -284,3 +289,4 @@ Stato attuale:
 - deploy locale persistente funzionante
 - pipeline AWS funzionante
 - deploy su Elastic Beanstalk funzionante
+

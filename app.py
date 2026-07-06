@@ -1,10 +1,10 @@
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify, request, render_template
 import requests
 
 
 app = Flask(__name__)
 
-APP_VERSION = "1.1.0"
+APP_VERSION = "1.2.0"
 
 GEOCODING_URL = "https://geocoding-api.open-meteo.com/v1/search"
 FORECAST_URL = "https://api.open-meteo.com/v1/forecast"
@@ -12,19 +12,30 @@ FORECAST_URL = "https://api.open-meteo.com/v1/forecast"
 
 @app.route("/")
 def home():
-    return """
-    <html>
-        <head>
-            <title>Weather Edge Monitor</title>
-        </head>
-        <body>
-            <h1>Weather Edge Monitor</h1>
-            <p>Base application running successfully.</p>
-            <p>Weather API available at: /api/weather?city=Modena</p>
-            <p>Version: 1.1.0</p>
-        </body>
-    </html>
     """
+    HTML dashboard.
+
+    If the user provides a city parameter, the page shows current weather data.
+    Example:
+    /?city=Modena
+    """
+    city = request.args.get("city")
+    weather = None
+    error = None
+
+    if city:
+        try:
+            weather, error, _ = get_weather_by_city(city)
+        except requests.RequestException:
+            error = "Unable to retrieve weather data"
+
+    return render_template(
+        "index.html",
+        city=city,
+        weather=weather,
+        error=error,
+        version=APP_VERSION
+    )
 
 
 @app.route("/health")
@@ -100,37 +111,52 @@ def api_weather():
         }), 400
 
     try:
-        location = get_coordinates(city)
+        weather, error, status_code = get_weather_by_city(city)
 
-        if location is None:
+        if error:
             return jsonify({
-                "error": f"City not found: {city}"
-            }), 404
+                "error": error
+            }), status_code
 
-        weather = get_current_weather(
-            location["latitude"],
-            location["longitude"]
-        )
-
-        current = weather.get("current", {})
-
-        return jsonify({
-            "city": location["name"],
-            "region": location["admin1"],
-            "country": location["country"],
-            "latitude": location["latitude"],
-            "longitude": location["longitude"],
-            "temperature": current.get("temperature_2m"),
-            "humidity": current.get("relative_humidity_2m"),
-            "wind_speed": current.get("wind_speed_10m"),
-            "time": current.get("time")
-        })
+        return jsonify(weather), 200
 
     except requests.RequestException:
         return jsonify({
             "error": "Unable to retrieve weather data"
         }), 500
 
+
+def get_weather_by_city(city):
+    """
+    Retrieves normalized weather data for a city.
+
+    This function is used both by the HTML dashboard and by the REST API.
+    """
+    location = get_coordinates(city)
+
+    if location is None:
+        return None, f"City not found: {city}", 404
+
+    weather = get_current_weather(
+        location["latitude"],
+        location["longitude"]
+    )
+
+    current = weather.get("current", {})
+
+    result = {
+        "city": location["name"],
+        "region": location["admin1"],
+        "country": location["country"],
+        "latitude": location["latitude"],
+        "longitude": location["longitude"],
+        "temperature": current.get("temperature_2m"),
+        "humidity": current.get("relative_humidity_2m"),
+        "wind_speed": current.get("wind_speed_10m"),
+        "time": current.get("time")
+    }
+
+    return result, None, 200
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000)

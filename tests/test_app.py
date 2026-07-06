@@ -17,7 +17,7 @@ def test_health_endpoint():
     data = response.get_json()
 
     assert data["status"] == "ok"
-    assert data["version"] == "1.1.0"
+    assert data["version"] == "1.2.0"
 
 
 def test_home_endpoint():
@@ -27,6 +27,8 @@ def test_home_endpoint():
 
     assert response.status_code == 200
     assert b"Weather Edge Monitor" in response.data
+    assert b"name=\"city\"" in response.data
+
 
 
 def test_weather_endpoint_missing_city():
@@ -85,3 +87,29 @@ def test_weather_endpoint_success(monkeypatch):
     assert data["temperature"] == 22.5
     assert data["humidity"] == 60
     assert data["wind_speed"] == 7.2
+
+
+def test_home_endpoint_with_weather(monkeypatch):
+    def fake_get_weather_by_city(city):
+        return {
+            "city": "Modena",
+            "region": "Emilia-Romagna",
+            "country": "Italy",
+            "latitude": 44.6471,
+            "longitude": 10.9252,
+            "temperature": 22.5,
+            "humidity": 60,
+            "wind_speed": 7.2,
+            "time": "2026-07-05T10:00"
+        }, None, 200
+
+    monkeypatch.setattr("app.get_weather_by_city", fake_get_weather_by_city)
+
+    client = app.test_client()
+
+    response = client.get("/?city=Modena")
+
+    assert response.status_code == 200
+    assert b"Modena" in response.data
+    assert b"22.5" in response.data
+    assert b"60" in response.data

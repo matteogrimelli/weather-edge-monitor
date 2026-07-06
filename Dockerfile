@@ -23,6 +23,9 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copia il file principale dell'applicazione dentro il container.
 COPY app.py .
 
+# Copia la cartella dei template HTML dentro il container.
+COPY templates ./templates
+
 # Documenta che l'applicazione usa la porta 5000.
 # La porta sarà poi mappata con docker run o docker-compose.
 EXPOSE 5000
